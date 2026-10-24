@@ -8,6 +8,7 @@ import type { Message } from '../lib/i18n';
 import type { Board, BoardNote, RecentFile } from '../lib/types';
 import type { NoteSubject } from '../lib/note-keys';
 import type { NotePatch } from '../lib/workspace';
+import type { ProbeGuide, ProbeGuideState } from '../lib/probe-guide';
 import type BugReportContract = require('../../shared/bug-report-contract.cjs');
 
 /**
@@ -128,6 +129,8 @@ export interface WorkspaceState {
   save: SaveState;
   selection: BoardSelectionState;
   probe: ProbeState;
+  /** The active Probe Guide run (pushed over the AI/MCP control channel), or null when none is loaded. */
+  probeGuide: ProbeGuideState | null;
   search: SearchState;
   /** Board ↔ schematic comparison for every ready schematic (null without one). */
   link: LinkReport | null;
@@ -205,6 +208,14 @@ export interface WorkspaceActions {
   setSearchQuery(query: string): void;
   /** Row activation: selects/centers on the board and opens the matching schematic sheet or document page. */
   activateSearchRow(row: SearchRow): void;
+
+  // --- probe guide ---
+  /** Starts a new Probe Guide run from `guide.startStepId`. Throws if the guide has no such step. */
+  loadProbeGuide(guide: ProbeGuide): void;
+  /** Applies a keypress to the running guide; a no-op without a loaded guide or an invalid key for the current step. */
+  advanceProbeGuide(choiceKey: string): void;
+  /** Ends the running guide, if any. */
+  clearProbeGuide(): void;
 
   // --- notes (technician records, never inferred measurements) ---
   /** `target` names the part or pad by this session's board ids; the note is stored under its key (reference and pin number). */

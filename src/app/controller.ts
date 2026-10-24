@@ -16,6 +16,8 @@ import type { Message, MessageKey, MessageParam, ParseIssue } from '../lib/i18n'
 import { assertStorable, migrateNotes, noteKeyIndex, unresolvedNotes } from '../lib/note-keys';
 import type { NoteSubject } from '../lib/note-keys';
 import type { CreatePdfSessionOptions, PdfSession, PdfSessionSnapshot } from '../lib/pdf/session-contract';
+import { advanceProbeGuide, startProbeGuide } from '../lib/probe-guide';
+import type { ProbeGuide } from '../lib/probe-guide';
 import { pinKey, symbolKey } from '../lib/schematic/model';
 import type { SchSheetInstance, SchematicDesign } from '../lib/schematic/model';
 import type { SchematicWorkerResponse } from '../lib/schematic/schematic-worker';
@@ -323,7 +325,7 @@ class Controller {
     this.watchdog = { ...DEFAULT_PARSE_WATCHDOG, ...deps.parseWatchdog };
     this.state = {
       board: null, boardIndex: null, boardKey: null, boardPath: '', manifest: null, activeTab: 'board', split: DEFAULT_SPLIT, documents: NO_DOCUMENTS, notes: NO_NOTES, notesBlocked: null,
-      save: IDLE_SAVE, selection: EMPTY_SELECTION, probe: EMPTY_PROBE, search: EMPTY_SEARCH, link: null, pdfLinks: NO_LINKS, overlays: NO_OVERLAYS, notices: NO_NOTICES,
+      save: IDLE_SAVE, selection: EMPTY_SELECTION, probe: EMPTY_PROBE, probeGuide: null, search: EMPTY_SEARCH, link: null, pdfLinks: NO_LINKS, overlays: NO_OVERLAYS, notices: NO_NOTICES,
       persistence: this.desktop ? 'native' : 'session-only', import: { phase: 'idle', keyRequest: null, recents: NO_RECENTS, file: null, progress: null, reportContext: null },
     };
     this.actions = this.createActions();
@@ -1189,6 +1191,20 @@ class Controller {
     this.setProbe({ origin: null, schematicMapping: null, boardMapping: null, schematicNetMapping: null, boardNetMapping: null, documentRef: null });
   }
 
+  /** Starts a new Probe Guide run. Lets `startProbeGuide`'s error (invalid `startStepId`) propagate to the caller. */
+  private loadProbeGuide(guide: ProbeGuide): void {
+    const next = startProbeGuide(guide);
+    this.patch({ probeGuide: next });
+  }
+  private advanceProbeGuide(choiceKey: string): void {
+    if (!this.state.probeGuide) return;
+    const next = advanceProbeGuide(this.state.probeGuide, choiceKey);
+    this.patch({ probeGuide: next });
+  }
+  private clearProbeGuide(): void {
+    this.patch({ probeGuide: null });
+  }
+
   private pickSchematic(target: { documentId: string; instancePath: string; symbolId: string; pinId?: string }, origin: SelectionOrigin): void {
     const source = this.sources.find(candidate => candidate.documentId === target.documentId);
     if (!source) return;
@@ -1940,6 +1956,10 @@ class Controller {
 
       setSearchQuery: query => { this.searchText = query; this.runSearch(); },
       activateSearchRow: row => this.batch(() => this.activateSearchRow(row)),
+
+      loadProbeGuide: guide => this.batch(() => this.loadProbeGuide(guide)),
+      advanceProbeGuide: choiceKey => this.batch(() => this.advanceProbeGuide(choiceKey)),
+      clearProbeGuide: () => this.batch(() => this.clearProbeGuide()),
 
       upsertNote: (target, patch) => this.upsertNote(target, patch),
       removeNote: id => this.removeNote(id),

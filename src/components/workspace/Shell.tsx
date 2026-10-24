@@ -5,6 +5,7 @@ import type { DocumentHitRow, PdfLinkHit, SchematicTarget, SearchRow } from '../
 import { SUPPORTED_EXTENSIONS } from '../../lib/formats';
 import type { WorkspaceAliases } from '../../lib/documents';
 import type { Message } from '../../lib/i18n';
+import type { Bounds2 } from '../../lib/geometry';
 import type { Board, ViewCommand, ViewSide } from '../../lib/types';
 import { unresolvedNotes } from '../../lib/note-keys';
 import type { NoteSubject } from '../../lib/note-keys';
@@ -141,7 +142,8 @@ export default function Shell({ api }: { api: WorkspaceApi }) {
   const focusLayout = settings.layout === 'focus';
   const native = state.persistence === 'native';
   const boardVisible = !!board && (activeTab === 'board' || split.enabled);
-  const command = useCallback((type: ViewCommand['type']) => setViewCommand({ type, nonce: ++commandCounter.current }), []);
+  // `bounds` is additive for 'fit-bounds' (Package D, Probe Guide): every other command type still ignores it, as before.
+  const command = useCallback((type: ViewCommand['type'], bounds?: Bounds2) => setViewCommand({ type, nonce: ++commandCounter.current, ...(bounds ? { bounds } : {}) }), []);
 
   // --- board camera: the stored view of THIS board (the manifest of the current board) replaces the automatic fit ---
   const storedCamera = board && state.boardKey ? actions.cameraOf('board') : null;
@@ -272,8 +274,8 @@ export default function Shell({ api }: { api: WorkspaceApi }) {
   }, []);
 
   // --- global keyboard workflow (the rules live in shortcuts.ts; the key dialog counts as a modal like the others, H3-02) ---
-  const keyCtx = useRef({ modal, noteTarget, keyRequest: !!state.import.keyRequest, boardVisible, focusLayout, hasBoard: !!board, activeTab });
-  keyCtx.current = { modal, noteTarget, keyRequest: !!state.import.keyRequest, boardVisible, focusLayout, hasBoard: !!board, activeTab };
+  const keyCtx = useRef({ modal, noteTarget, keyRequest: !!state.import.keyRequest, boardVisible, focusLayout, hasBoard: !!board, activeTab, probeGuideActive: !!state.probeGuide });
+  keyCtx.current = { modal, noteTarget, keyRequest: !!state.import.keyRequest, boardVisible, focusLayout, hasBoard: !!board, activeTab, probeGuideActive: !!state.probeGuide };
   useEffect(() => {
     const focusSearch = () => {
       const ctx = keyCtx.current;
@@ -288,9 +290,14 @@ export default function Shell({ api }: { api: WorkspaceApi }) {
       const result = resolveShortcut(event, {
         modal: !!ctx.modal, modalGuard: ctx.modal === 'bug-report', note: !!ctx.noteTarget, keyRequest: ctx.keyRequest, hasBoard: ctx.hasBoard, boardVisible: ctx.boardVisible,
         editable: !!target.matches?.('input, textarea, select, [contenteditable]'), viewer: !!target.closest?.('.pdfv, .schv, .imgv'), pdf: !!target.closest?.('.pdfv'),
+        probeGuideActive: ctx.probeGuideActive,
       });
       if (!result) return;
       if (result.prevent) event.preventDefault();
+      if (typeof result.action === 'object' && result.action !== null) {
+        if (result.action.type === 'probe-guide-choice') actionsRef.current.advanceProbeGuide(result.action.key);
+        return;
+      }
       switch (result.action) {
         case 'close-modal': setModal(null); break;
         case 'open': if (stateRef.current.persistence === 'native') void actionsRef.current.openBoard(); else boardInput.current?.click(); break;

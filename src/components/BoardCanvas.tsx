@@ -3,7 +3,7 @@ import type { PointerEvent as ReactPointerEvent } from 'react';
 import type { Board, BoardComponent, BoardPin, CanvasStatus, Language, ViewCommand, ViewSide } from '../lib/types';
 import { createTranslator } from '../lib/i18n';
 import { boundsCenter, clamp, distance, expandBounds, fitView, panBy, zoomAt } from '../lib/geometry';
-import type { Point2, ViewTransform } from '../lib/geometry';
+import type { Bounds2, Point2, ViewTransform } from '../lib/geometry';
 import { boardIndexOf } from '../lib/board-index';
 import type { BoardIndex } from '../lib/board-index';
 import { cameraToView, sameCamera, viewShowsBoard, viewToCamera } from './board-camera';
@@ -59,6 +59,8 @@ export interface BoardCanvasProps {
   onSelectComponent(id: string | null): void;
   onSelectPin(id: string): void;
   onStatusChange?(status: CanvasStatus): void;
+  /** When set, the canvas renders two independent panes side-by-side instead of one, each fit/centered on its own bounds. `null`/absent = normal single-pane view. */
+  splitView?: { left: Bounds2; right: Bounds2 } | null;
 }
 
 /** The view is reported once it stopped changing for this long: a pan/zoom gesture never reaches the shell at pointer rate. */
@@ -66,6 +68,8 @@ const CAMERA_IDLE_MS = 350;
 /** Backstop for a missed contextrestored event: the (draw-free) lost-context check runs this often. Idle stays at 0 draws. */
 const CONTEXT_CHECK_MS = 1000;
 const NO_LAYERS: readonly Layer2D[] = [];
+/** Gap in CSS pixels between the two panes of a split view. */
+const SPLIT_GAP = 4;
 
 interface HoverTarget { component: BoardComponent; pin?: BoardPin; screen: Point2 }
 interface DragState { id: number; start: Point2; last: Point2; moved: boolean }
@@ -110,12 +114,36 @@ function BoardCanvas(props: BoardCanvasProps) {
   const scene = useMemo(() => buildBoardScene(props.board, props.index ?? boardIndexOf(props.board)), [props.board, props.index]);
 
   /**
-   * The panes of the canvas, in draw order. Today one pane covers the whole canvas and shows the camera's view of the viewed side;
-   * the two-sided view and the overview add panes here, and drawing and input already go through the pane list.
+   * The two panes' cameras when `props.splitView` is set, cached so a draw doesn't re-fit on every frame; recomputed by the effect
+   * below (bounds change) and by the resize handler (canvas size change). Unlike `viewRef`, nothing writes into this from user
+   * gestures (wheel/drag) in this pass: the split panes are fit-and-fixed, not live pannable/zoomable yet. Follow-up if needed.
+   */
+  const splitViewRef = useRef<{ left: ViewTransform; right: ViewTransform } | null>(null);
+  const fitSplitViews = useCallback((split: { left: Bounds2; right: Bounds2 }) => {
+    const { width, height } = dimensionsRef.current;
+    const paneWidth = Math.max(1, (width - SPLIT_GAP) / 2);
+    const mirrored = propsRef.current.side === 'bottom';
+    return { left: fitView(split.left, paneWidth, height, 0, mirrored), right: fitView(split.right, paneWidth, height, 0, mirrored) };
+  }, []);
+
+  /**
+   * The panes of the canvas, in draw order. Normally one pane covers the whole canvas and shows the camera's view of the viewed
+   * side. When `props.splitView` is set, two panes split the canvas left/right instead, each fit to its own bounds; drawing and
+   * input already go through the pane list generically, so nothing else needs to know which case this is.
    */
   const panes = (): readonly BoardPane[] => {
     const { width, height } = dimensionsRef.current;
-    return [fullPane(viewRef.current, propsRef.current.side, width, height)];
+    const side = propsRef.current.side;
+    const split = propsRef.current.splitView;
+    if (split) {
+      const views = splitViewRef.current ?? fitSplitViews(split);
+      const paneWidth = Math.max(1, (width - SPLIT_GAP) / 2);
+      return [
+        { id: 'split-left', rect: { x: 0, y: 0, width: paneWidth, height }, view: views.left, side },
+        { id: 'split-right', rect: { x: paneWidth + SPLIT_GAP, y: 0, width: paneWidth, height }, view: views.right, side },
+      ];
+    }
+    return [fullPane(viewRef.current, side, width, height)];
   };
   /** The pane that takes input at a canvas point: the one under it, else (a captured drag or a wheel at the edge) the first pane. */
   const inputPane = (point: Point2): BoardPane => {
@@ -271,6 +299,7 @@ function BoardCanvas(props: BoardCanvasProps) {
       const fit = fitView(propsRef.current.board.bounds, width, height, viewRef.current.rotation, propsRef.current.side === 'bottom');
       fitScaleRef.current = fit.scale;
       if (!initialized) { viewRef.current = fit; initialized = true; }
+      if (propsRef.current.splitView) splitViewRef.current = fitSplitViews(propsRef.current.splitView);
       requestDraw(); reportStatus(true);
     };
     const onResolutionChange = () => {
@@ -299,7 +328,16 @@ function BoardCanvas(props: BoardCanvasProps) {
       resolutionQuery?.removeEventListener('change', onResolutionChange);
       window.clearInterval(resolutionTimer);
     };
-  }, [clearHover, requestDraw, reportStatus]);
+  }, [clearHover, requestDraw, reportStatus, fitSplitViews]);
+
+  // Re-fits the two split-view cameras when the caller gives new bounds (or clears/sets the prop); a plain object reference
+  // comparison is enough since callers construct `splitView` fresh whenever its bounds actually change.
+  const splitLeft = props.splitView?.left;
+  const splitRight = props.splitView?.right;
+  useEffect(() => {
+    splitViewRef.current = splitLeft && splitRight ? fitSplitViews({ left: splitLeft, right: splitRight }) : null;
+    requestDraw();
+  }, [splitLeft, splitRight, fitSplitViews, requestDraw]);
 
   useEffect(() => {
     const { width, height } = dimensionsRef.current;
@@ -373,6 +411,13 @@ function BoardCanvas(props: BoardCanvasProps) {
         const selected = props.selectedComponentId ? scene.componentsById.get(props.selectedComponentId) : undefined;
         if (!selected) break;
         const b = selected.bounds;
+        const target = Math.min(width * 0.42 / Math.max(b.maxX - b.minX + 4, 1), height * 0.42 / Math.max(b.maxY - b.minY + 4, 1));
+        moveView({ ...view, center: boundsCenter(b), scale: Math.min(60, Math.max(view.scale, target)) }, true);
+        break;
+      }
+      case 'fit-bounds': {
+        const b = command.bounds;
+        if (!b) break;
         const target = Math.min(width * 0.42 / Math.max(b.maxX - b.minX + 4, 1), height * 0.42 / Math.max(b.maxY - b.minY + 4, 1));
         moveView({ ...view, center: boundsCenter(b), scale: Math.min(60, Math.max(view.scale, target)) }, true);
         break;

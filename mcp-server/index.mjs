@@ -52,6 +52,33 @@ function textResult(value) {
   return { content: [{ type: 'text', text: typeof value === 'string' ? value : JSON.stringify(value, null, 2) }] };
 }
 
+const ProbeMarkerSchema = z.object({
+  color: z.enum(['red', 'blue']),
+  componentId: z.string(),
+  pinId: z.string().optional(),
+  label: z.string().optional(),
+});
+const ProbeChoiceSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  next: z.string().nullable(),
+  verdict: z.string().optional(),
+});
+const ProbeStepSchema = z.object({
+  id: z.string(),
+  instruction: z.string(),
+  probes: z.array(ProbeMarkerSchema).min(1).max(2),
+  mode: z.object({ type: z.enum(['V_DC', 'V_AC', 'OHM', 'CONTINUITY', 'A_DC']), range: z.string() }),
+  expected: z.string(),
+  choices: z.array(ProbeChoiceSchema).min(1),
+});
+const ProbeGuideSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  startStepId: z.string(),
+  steps: z.record(ProbeStepSchema),
+});
+
 const server = new McpServer({ name: 'trace-boardviewer', version: '0.1.0' });
 
 server.tool(
@@ -108,6 +135,27 @@ server.tool(
   'Clear the current selection/highlight in the running TRACE Boardviewer window.',
   {},
   async () => { await rpc('clearHighlight'); return textResult('Cleared the highlight.'); },
+);
+
+server.tool(
+  'board_probe_guide_load',
+  'Load a probe guide (a branching sequence of multimeter-measurement steps) into the running TRACE Boardviewer app, so it starts walking the person through the first step.',
+  { guide: ProbeGuideSchema },
+  async ({ guide }) => { await rpc('loadProbeGuide', { guide }); return textResult(`Loaded probe guide "${guide.title}" (${Object.keys(guide.steps).length} steps).`); },
+);
+
+server.tool(
+  'board_probe_guide_status',
+  'Check whether a probe guide is active in the running TRACE Boardviewer app, and if so, get the current step\'s instruction, meter mode, expected reading, and available choices.',
+  {},
+  async () => textResult(await rpc('probeGuideStatus')),
+);
+
+server.tool(
+  'board_probe_guide_clear',
+  'Clear the active probe guide in the running TRACE Boardviewer window.',
+  {},
+  async () => { await rpc('clearProbeGuide'); return textResult('Cleared the active probe guide.'); },
 );
 
 const transport = new StdioServerTransport();

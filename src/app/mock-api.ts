@@ -13,6 +13,7 @@ import type { PdfSession } from '../lib/pdf/session-contract';
 import { bundledOcrEngine } from '../lib/ocr/bundled';
 import { createPdfSession } from '../lib/pdf/session';
 import type { Hit } from '../lib/pdf/search';
+import { advanceProbeGuide, startProbeGuide } from '../lib/probe-guide';
 import { computeConnectivity } from '../lib/schematic/connectivity';
 import { pinKey, symbolKey } from '../lib/schematic/model';
 import type { SchSheetInstance, SchematicDesign } from '../lib/schematic/model';
@@ -196,7 +197,7 @@ export function createMockWorkspace(options: MockOptions = {}): MockWorkspace {
     board: options.empty ? null : board, boardIndex: options.empty ? null : boardIndex, boardKey: options.empty ? null : boardKey, boardPath: 'C:/service/mainboard.kicad_pcb', manifest: null, activeTab: 'board',
     split: { enabled: false, ratio: 0.5, right: null }, documents: docs, notes, notesBlocked: options.notesBlocked ? { text: 'notes.json is unreadable (invalid JSON).' } : null,
     save: { dirty: false, saving: false, failure: null }, selection: { componentId: null, pinId: null, net: null },
-    probe: { origin: null, nonce: 0, schematic: null, schematicMapping: null, boardMapping: null, documentRef: null, schematicNetMapping: null, boardNetMapping: null },
+    probe: { origin: null, nonce: 0, schematic: null, schematicMapping: null, boardMapping: null, documentRef: null, schematicNetMapping: null, boardNetMapping: null }, probeGuide: null,
     search: { query: '', result: null, pending: false }, link: null, pdfLinks: {}, overlays: {}, notices: [], persistence: options.persistence ?? 'native',
     import: { phase: 'idle', keyRequest: null, recents: [{ name: 'mainboard.kicad_pcb', path: 'C:/service/mainboard.kicad_pcb', openedAt: '2026-10-04T08:00:00.000Z' }, { name: 'older.gc', path: 'C:/service/older.gc', openedAt: '2026-09-01T08:00:00.000Z' }], file: options.empty ? null : { name: 'mainboard.kicad_pcb', path: 'C:/service/mainboard.kicad_pcb', key: boardKey }, progress: null, reportContext: null },
   };
@@ -361,6 +362,13 @@ export function createMockWorkspace(options: MockOptions = {}): MockWorkspace {
     clearSelection: () => { record_('clearSelection'); set({ selection: { componentId: null, pinId: null, net: null } }); },
     setAlias: (kind, from, to) => { record_('setAlias', kind, from, to); aliases = { ...aliases, [kind]: { ...aliases[kind], [from]: to } }; aliasesChanged(); return null; },
     removeAlias: (kind, from) => { record_('removeAlias', kind, from); const next = { ...aliases[kind] }; delete next[from]; aliases = { ...aliases, [kind]: next }; aliasesChanged(); return true; },
+    loadProbeGuide: guide => { record_('loadProbeGuide', guide); set({ probeGuide: startProbeGuide(guide) }); },
+    advanceProbeGuide: choiceKey => {
+      record_('advanceProbeGuide', choiceKey);
+      if (!state.probeGuide) return;
+      set({ probeGuide: advanceProbeGuide(state.probeGuide, choiceKey) });
+    },
+    clearProbeGuide: () => { record_('clearProbeGuide'); set({ probeGuide: null }); },
     setSearchQuery: query => { record_('setSearchQuery', query); runSearch(query); },
     activateSearchRow: (row: SearchRow) => {
       record_('activateSearchRow', row);

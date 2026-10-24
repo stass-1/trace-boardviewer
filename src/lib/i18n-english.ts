@@ -19,6 +19,7 @@ import native from '../../electron/locales/en/native.json';
 import network from '../../electron/locales/en/network.json';
 import notes from '../../electron/locales/en/notes.json';
 import pdf from '../../electron/locales/en/pdf.json';
+import probe from '../../electron/locales/en/probe.json';
 import schematic from '../../electron/locales/en/schematic.json';
 import settings from '../../electron/locales/en/settings.json';
 import support from '../../electron/locales/en/support.json';
@@ -26,5 +27,5 @@ import workspace from '../../electron/locales/en/workspace.json';
 
 export const en = {
   ...app, ...board, ...common, ...dialogs, ...diagnostic, ...documents, ...formats, ...images, ...kinds, ...library, ...native,
-  ...network, ...notes, ...pdf, ...schematic, ...settings, ...support, ...workspace,
+  ...network, ...notes, ...pdf, ...probe, ...schematic, ...settings, ...support, ...workspace,
 };

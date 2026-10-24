@@ -1,0 +1,6 @@
+{
+  "probe.continuity": "Ciągłość",
+  "probe.range": "Zakres {range}",
+  "probe.close": "Zamknij przewodnik pomiarowy",
+  "probe.expected": "Oczekiwane"
+}

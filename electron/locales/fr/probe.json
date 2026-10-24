@@ -1,0 +1,6 @@
+{
+  "probe.continuity": "Continuité",
+  "probe.range": "Plage {range}",
+  "probe.close": "Fermer le guide de mesure",
+  "probe.expected": "Attendu"
+}

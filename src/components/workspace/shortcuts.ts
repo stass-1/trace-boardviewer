@@ -23,6 +23,8 @@ export interface ShortcutContext {
   viewer: boolean;
   /** The key was pressed inside the PDF viewer: Ctrl+F searches the document, not the board. */
   pdf: boolean;
+  /** A Probe Guide run is active (state.probeGuide is non-null): bare digit keys 1-9 pick its current step's numbered choice. */
+  probeGuideActive: boolean;
 }
 
 /** Window event that opens the Settings dialog from outside the keyboard (the macOS app-menu "Settings…" item sends it). */
@@ -30,7 +32,9 @@ export const OPEN_SETTINGS_EVENT = 'trace:open-settings';
 
 export type ShortcutAction =
   | 'close-modal' | 'open' | 'search' | 'pdf-search' | 'help' | 'settings' | 'layout-workshop' | 'layout-focus' | 'split'
-  | 'tab-board' | 'tab-schematic' | 'tab-documents' | 'fit' | 'rotate' | 'measure' | 'labels' | 'note' | 'zoom-in' | 'zoom-out' | 'clear';
+  | 'tab-board' | 'tab-schematic' | 'tab-documents' | 'fit' | 'rotate' | 'measure' | 'labels' | 'note' | 'zoom-in' | 'zoom-out' | 'clear'
+  /** A bare digit 1-9 while a Probe Guide run is active: `key` is the typed digit, passed straight to `advanceProbeGuide`. */
+  | { type: 'probe-guide-choice'; key: string };
 
 /** What the shell does with the key: the action (null = nothing, the key is only swallowed) and whether the browser default is suppressed. */
 export interface ShortcutResult { action: ShortcutAction | null; prevent: boolean }
@@ -80,6 +84,8 @@ export function resolveShortcut(event: ShortcutKey, ctx: ShortcutContext): Short
     case '+': case '=': return act('zoom-in', false);
     case '-': return act('zoom-out', false);
     case 'escape': return act('clear', false);
+    case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+      return ctx.probeGuideActive ? act({ type: 'probe-guide-choice', key }) : null;
     default: return null;
   }
 }

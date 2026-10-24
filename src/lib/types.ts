@@ -1,3 +1,4 @@
+import type { Bounds2 } from './geometry';
 import type { DiagnosticReport } from './diagnostics/report';
 import type { Language, ParseIssue } from './i18n';
 import type { DocumentKind, DocumentLocateRequest, DocumentLocateResult, DocumentPayload, WorkspaceExportRequest, WorkspaceExportResult, WorkspaceManifest } from './documents';
@@ -181,8 +182,10 @@ export interface CanvasStatus {
   measurement: number | null;
 }
 export interface ViewCommand {
-  type: 'fit' | 'zoom-in' | 'zoom-out' | 'center-selection' | 'rotate';
+  type: 'fit' | 'zoom-in' | 'zoom-out' | 'center-selection' | 'rotate' | 'fit-bounds';
   nonce: number;
+  /** Only for type 'fit-bounds': the board-space bounds to fit/center on. */
+  bounds?: Bounds2;
 }
 /**
  * Native rejections arrive with a stable machine code as a "[CODE] text" message prefix (see nativeErrorCode in workspace.ts). Quit-time codes:

@@ -1,0 +1,6 @@
+{
+  "probe.continuity": "Continuity",
+  "probe.range": "{range} range",
+  "probe.close": "Close probe guide",
+  "probe.expected": "Expected"
+}

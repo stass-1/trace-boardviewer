@@ -1,0 +1,6 @@
+{
+  "probe.continuity": "Vodivosť",
+  "probe.range": "Rozsah {range}",
+  "probe.close": "Zavrieť sprievodcu meraním",
+  "probe.expected": "Očakávané"
+}

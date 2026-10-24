@@ -1,4 +1,5 @@
 import type { WorkspaceActions, WorkspaceState } from './api';
+import type { ProbeGuide } from '../lib/probe-guide';
 
 /** One board query/selection request from the AI agent bridge (electron/mcp-bridge.cjs). */
 export type McpOutcome = { ok: true; result: unknown } | { ok: false; error: string };
@@ -75,6 +76,34 @@ export function handleMcpRequest(method: string, params: Record<string, unknown>
       }
       case 'clearHighlight': {
         actions.clearSelection();
+        return { ok: true, result: null };
+      }
+      case 'loadProbeGuide': {
+        const guide = params?.guide as ProbeGuide | undefined;
+        if (!guide) throw new Error('BAD_PARAMS: "guide" is required.');
+        actions.loadProbeGuide(guide);
+        return { ok: true, result: null };
+      }
+      case 'probeGuideStatus': {
+        const g = state.probeGuide;
+        if (!g) return { ok: true, result: { active: false } };
+        const step = g.guide.steps[g.currentStepId];
+        return {
+          ok: true,
+          result: {
+            active: true,
+            guideTitle: g.guide.title,
+            currentStepId: g.currentStepId,
+            instruction: step?.instruction ?? null,
+            mode: step?.mode ?? null,
+            expected: step?.expected ?? null,
+            choices: step?.choices.map(c => ({ key: c.key, label: c.label })) ?? [],
+            history: g.history,
+          },
+        };
+      }
+      case 'clearProbeGuide': {
+        actions.clearProbeGuide();
         return { ok: true, result: null };
       }
       default:

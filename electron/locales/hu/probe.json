@@ -1,0 +1,6 @@
+{
+  "probe.continuity": "Folytonosság",
+  "probe.range": "{range} tartomány",
+  "probe.close": "Mérésvezető bezárása",
+  "probe.expected": "Várható"
+}
