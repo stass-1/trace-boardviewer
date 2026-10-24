@@ -149,4 +149,8 @@ contextBridge.exposeInMainWorld('traceDesktop', Object.freeze({
   // An external open (second instance, open-file) that could not be read: the message, in the application's language.
   onOpenFailed: (listener) => subscribe('trace:open-failed', listener),
   onFlushRequest,
+  // AI agent control channel (electron/mcp-bridge.cjs, opt-in via TRACE_MCP_BRIDGE=1): main asks the
+  // renderer to run a board query/selection action and report back; see src/app/mcp-dispatch.ts.
+  onMcpRequest: (listener) => subscribe('trace:mcp-request', listener),
+  sendMcpResponse: (id, payload) => ipcRenderer.send('trace:mcp-response', { id, ...payload }),
 }));

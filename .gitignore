@@ -31,3 +31,5 @@ local-boards/
 Thumbs.db
 Desktop.ini
 .DS_Store
+# AI agent control channel (electron/mcp-bridge.cjs): per-launch port/token, never committed.
+.mcp-bridge.json

@@ -306,6 +306,10 @@ export interface TraceDesktop {
   libraryLoadCorrections?(): Promise<{ status: string; document: LibraryCorrectionDocument | null; dropped: number; rejections: LibraryRejection[] }>;
   /** Saves the corrections of this platform atomically. 'refused' writes nothing and names each refused entry; rejects with a LIBRARY_* code. */
   librarySaveCorrections?(document: LibraryCorrectionDocument): Promise<{ status: 'saved'; bytes: number; quarantine?: string; quarantinedEntries?: number } | { status: 'refused'; rejections: LibraryRejection[] }>;
+  /** AI agent control channel (electron/mcp-bridge.cjs), opt-in via TRACE_MCP_BRIDGE=1: main asks the renderer to run one board query/selection method. Optional: absent unless the bridge is enabled. */
+  onMcpRequest?(listener: (request: { id: number; method: string; params?: Record<string, unknown> }) => void): () => void;
+  /** Answers one onMcpRequest call by its id, with the outcome from src/app/mcp-dispatch.ts. */
+  sendMcpResponse?(id: number, payload: { ok: true; result: unknown } | { ok: false; error: string }): void;
 }
 /** A measured value, or 'unknown' when the scan did not measure it. Never false by default. */
 export type LibraryMeasure = number | 'unknown';

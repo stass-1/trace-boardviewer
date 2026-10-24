@@ -4,6 +4,7 @@ import { createPdfSession } from '../lib/pdf/session';
 import type { WorkspaceApi } from './api';
 import { createWorkspaceController } from './controller';
 import type { ControllerDeps, KeyValueStorage, WorkerFactory, WorkspaceController } from './controller';
+import { handleMcpRequest } from './mcp-dispatch';
 
 /** Wires a started worker to the controller's callbacks (the controller never touches `Worker` itself). */
 const attach = (worker: Worker, onMessage: (data: unknown) => void, onError: () => void) => {
@@ -92,6 +93,16 @@ export function useWorkspace(): WorkspaceApi {
     const flush = () => { void controller.flush(); };
     window.addEventListener('pagehide', flush);
     return () => { window.removeEventListener('pagehide', flush); detach(); stop(); };
+  }, [controller]);
+  // AI agent control channel (opt-in, electron/mcp-bridge.cjs): absent unless the bridge is enabled.
+  useEffect(() => {
+    const onMcpRequest = window.traceDesktop?.onMcpRequest;
+    const sendMcpResponse = window.traceDesktop?.sendMcpResponse;
+    if (typeof onMcpRequest !== 'function' || typeof sendMcpResponse !== 'function') return;
+    return onMcpRequest(({ id, method, params }) => {
+      const outcome = handleMcpRequest(method, params, controller.getSnapshot(), controller.actions);
+      sendMcpResponse(id, outcome);
+    });
   }, [controller]);
   return useMemo(() => ({ state, actions: controller.actions, sheetsOf: controller.sheetsOf, statusStore: controller.statusStore }), [state, controller]);
 }

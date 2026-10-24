@@ -1,0 +1,12 @@
+{
+  "name": "trace-boardviewer-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP server letting an AI agent query the board currently open in TRACE Boardviewer and highlight components/pins/nets in its window.",
+  "main": "index.mjs",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^4.0.0"
+  }
+}

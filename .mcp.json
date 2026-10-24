@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "trace-board": {
+      "type": "stdio",
+      "command": "C:\\Users\\xstas\\AppData\\Roaming\\nvm\\v24.22.1\\node.exe",
+      "args": [
+        "D:\\Projects\\BoardFix\\trace-boardviewer\\mcp-server\\index.mjs"
+      ],
+      "env": {}
+    }
+  }
+}

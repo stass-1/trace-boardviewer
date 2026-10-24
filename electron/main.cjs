@@ -28,6 +28,7 @@ const { createBoardStore } = require('./library/board-store.cjs');
 const { DIRECTORY_SEGMENTS: LIBRARY_DEVICE_SEGMENTS } = require('./library/corrections-store.cjs');
 const { createExportTemporaries } = require('./export-temporaries.cjs');
 const { applicationMenuTemplate } = require('./app-menu.cjs');
+const { startMcpBridge, defaultControlFilePath } = require('./mcp-bridge.cjs');
 
 // Bounds for one board file (the primary and every companion sidecar together). The general bound is shared with the formats
 // code through shared/import-limits.json; the native Allegro bound applies only to a file whose header carries the Allegro marker.
@@ -1816,6 +1817,13 @@ if (!singleInstance) {
     installSession();
     createWindow();
     windowsAllowed = true;
+    // Opt-in local control channel for AI agents (see electron/mcp-bridge.cjs + mcp-server/): off by
+    // default so an ordinary launch never opens a network listener.
+    if (process.env.TRACE_MCP_BRIDGE === '1') {
+      const mcpBridge = startMcpBridge({ getTargetWindow: () => mainWindow, controlFilePath: defaultControlFilePath, log: console.log });
+      ipcMain.on('trace:mcp-response', (event, payload) => { if (trustedSender(event)) mcpBridge.handleResponse(payload); });
+      app.on('quit', () => mcpBridge.stop());
+    }
     void noticePendingOpens(launched);
   }).catch((error) => {
     dialog.showErrorBox(t('native.dialog.startupErrorTitle'), error.message || t('native.dialog.startupFailed'));
