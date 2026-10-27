@@ -19,7 +19,8 @@ export function isSupportLinkId(value: unknown): value is SupportLinkId {
 
 /** Catalog keys of the notice (electron/locales/*.json, all eight languages). */
 export const SUPPORT_NOTICE_KEYS = {
-  title: 'support.title', body: 'support.body', thanks: 'support.thanks', testing: 'support.testing', stripe: 'support.stripe', kofi: 'support.kofi', bug: 'support.bug', notNow: 'support.notNow',
+  title: 'support.title', body: 'support.body', thanks: 'support.thanks', testing: 'support.testing', direct: 'support.direct', directPlaceholder: 'support.directPlaceholder',
+  stripe: 'support.stripe', kofi: 'support.kofi', bug: 'support.bug', notNow: 'support.notNow',
 } as const satisfies Record<string, MessageKey>;
 
 /** The top bar's support (heart) button: its accessible label and tooltip, and the toast when the support page could not be opened. */

@@ -90,9 +90,10 @@ describe('copy', () => {
   const EN = catalogs.en as Record<string, string>;
   const HU = catalogs.hu as Record<string, string>;
 
-  it('the eight keys are named support.title/body/thanks/testing/stripe/kofi/bug/notNow', () => {
+  it('the ten keys are named support.title/body/thanks/testing/direct/directPlaceholder/stripe/kofi/bug/notNow', () => {
     expect(SUPPORT_NOTICE_KEYS).toEqual({
-      title: 'support.title', body: 'support.body', thanks: 'support.thanks', testing: 'support.testing', stripe: 'support.stripe', kofi: 'support.kofi', bug: 'support.bug', notNow: 'support.notNow',
+      title: 'support.title', body: 'support.body', thanks: 'support.thanks', testing: 'support.testing', direct: 'support.direct', directPlaceholder: 'support.directPlaceholder',
+      stripe: 'support.stripe', kofi: 'support.kofi', bug: 'support.bug', notNow: 'support.notNow',
     });
   });
 

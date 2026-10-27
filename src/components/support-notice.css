@@ -6,6 +6,9 @@
 .support-notice-body{margin:0 0 14px;font-size:13px;line-height:1.7;color:var(--text)}
 .support-notice-thanks{margin:0 0 10px;font-size:12px;line-height:1.6;color:var(--muted)}
 .support-notice-testing{margin:0 0 22px;font-size:12px;line-height:1.6;color:var(--muted)}
+.support-notice-direct{margin:0 0 22px;padding:12px 14px;border:1px dashed var(--control-line);border-radius:9px;display:flex;flex-direction:column;gap:4px}
+.support-notice-direct strong{font-size:12px;font-weight:600;color:var(--accent)}
+.support-notice-direct span{font-size:11px;line-height:1.6;color:var(--muted)}
 .support-notice-actions .outline-button svg{margin-right:6px;vertical-align:-2px}
 .support-notice-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .support-notice-actions .primary-button{padding:10px 16px}

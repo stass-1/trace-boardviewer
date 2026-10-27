@@ -3,6 +3,8 @@
   "support.body": "Ha a TRACE időt spórol neked a műhelyben, kérlek támogasd a további fejlesztését 5 euróval. A támogatás a fejlesztés eszközeire és szolgáltatásaira, a windowsos kódaláíró tanúsítványra, a macOS-build aláírásához szükséges Apple Developer Program tagságra, a weboldalra és az új projektek elindítására megy — a következő hamarosan érkezik, és később a TRACE-be kerül integrálásra.",
   "support.thanks": "Köszönjük mindenkinek, aki már támogatja a TRACE-t ❤",
   "support.testing": "Nagyon köszönöm, ha teszteled a TRACE-t és megosztod a véleményed, külön köszönet érte! Ha bugot találsz, kérlek mindenképp jelezd.",
+  "support.direct": "Támogass közvetlenül",
+  "support.directPlaceholder": "A fizetési adatok hamarosan következnek — ez csak egy helykitöltő.",
   "support.stripe": "Támogatom 5 euróval",
   "support.kofi": "Egy kávé a Ko-fi-n",
   "support.bug": "Hiba bejelentése",

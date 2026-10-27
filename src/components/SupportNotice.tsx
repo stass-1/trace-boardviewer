@@ -105,6 +105,10 @@ export function SupportDialog({ t, open, onClose, onVerified, onReportBug }: { t
       <p id={bodyId} className="support-notice-body">{t(SUPPORT_NOTICE_KEYS.body)}</p>
       <p className="support-notice-thanks">{t(SUPPORT_NOTICE_KEYS.thanks)}</p>
       <p className="support-notice-testing">{t(SUPPORT_NOTICE_KEYS.testing)}</p>
+      <div className="support-notice-direct">
+        <strong>{t(SUPPORT_NOTICE_KEYS.direct)}</strong>
+        <span>{t(SUPPORT_NOTICE_KEYS.directPlaceholder)}</span>
+      </div>
       <div className="support-notice-actions">
         <button type="button" className="primary-button" data-testid="support-stripe" data-support-link="stripe" disabled={busy} onClick={() => void activate('stripe')}>{t(SUPPORT_NOTICE_KEYS.stripe)}</button>
         <button type="button" className="outline-button" data-testid="support-kofi" data-support-link="kofi" disabled={busy} onClick={() => void activate('kofi')}>{t(SUPPORT_NOTICE_KEYS.kofi)}</button>

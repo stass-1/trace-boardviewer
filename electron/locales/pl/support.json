@@ -3,6 +3,8 @@
   "support.body": "Jeśli TRACE oszczędza Ci czas na warsztacie, wesprzyj jego dalszy rozwój kwotą €5. Twoje wsparcie finansuje narzędzia i usługi stojące za rozwojem TRACE, certyfikat do podpisywania kodu dla Windows, program Apple Developer potrzebny do podpisania wersji na macOS, stronę internetową i nowe projekty — następny pojawi się wkrótce i zostanie później zintegrowany z TRACE.",
   "support.thanks": "Dziękujemy wszystkim, którzy już wspierają TRACE ❤",
   "support.testing": "Bardzo dziękujemy za testowanie TRACE i podzielenie się opinią, osobne podziękowania za to! Jeśli znajdziesz błąd, koniecznie go zgłoś.",
+  "support.direct": "Wspieraj mnie bezpośrednio",
+  "support.directPlaceholder": "Dane do płatności wkrótce — to tylko tekst zastępczy.",
   "support.stripe": "Wesprzyj kwotą €5",
   "support.kofi": "Postaw kawę na Ko-fi",
   "support.bug": "Zgłoś błąd",

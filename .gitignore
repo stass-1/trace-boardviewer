@@ -15,6 +15,7 @@ playwright-report/
 user-data/
 profiles/
 local-boards/
+проекты/
 *.log
 *.tsbuildinfo
 *.cad
