@@ -35,6 +35,9 @@ import { LoadingOverlay } from './LoadingOverlay';
 import { NoteDialog } from './NoteDialog';
 import { noteEditorKey } from './note-draft';
 import { UnresolvedNotesDialog } from './UnresolvedNotes';
+import { usePanelWidths } from './panel-width';
+import { PanelResizeHandle } from './PanelResize';
+import { ProbeGuideHud } from './ProbeGuideHud';
 import { SearchPanel } from './SearchPanel';
 import { SplitLayout } from './SplitLayout';
 import { StatusBar } from './StatusBar';
@@ -107,6 +110,7 @@ export default function Shell({ api }: { api: WorkspaceApi }) {
   const [recentSelections, setRecentSelections] = useState<string[]>([]);
   // The side panels: `null` follows the automatic rule below, a boolean is the user's explicit choice (W-win-viewers-02).
   const [panelPref, setPanelPref] = useState<PanelPreference>({ left: null, right: null });
+  const panelWidths = usePanelWidths();
   const [pickedSchematic, setPickedSchematic] = useState<string | null>(null);
   const [pdfFocus, setPdfFocus] = useState(0);
   const [maximized, setMaximized] = useState(false);
@@ -318,6 +322,7 @@ export default function Shell({ api }: { api: WorkspaceApi }) {
         case 'note': editNote(); break;
         case 'zoom-in': command('zoom-in'); break;
         case 'zoom-out': command('zoom-out'); break;
+        case 'probe-guide-back': actionsRef.current.stepBackProbeGuide(); break;
         case 'clear': setMeasure(false); actionsRef.current.selectNet(null); actionsRef.current.setSearchQuery(''); break;
       }
     };
@@ -360,7 +365,9 @@ export default function Shell({ api }: { api: WorkspaceApi }) {
   const documentsTab = (layout: 'aside' | 'strip') => <DocumentsTab api={api} selectedId={docSelected} chrome={chrome} layout={layout} focusNonce={pdfFocus} onSelect={pickDocument} onAttach={attach} onExport={() => setModal('export')} />;
   const rightPane = activeTab === 'schematic' ? schematicTab : activeTab === 'documents' ? documentsTab('strip')
     : <SplitDocumentPane api={api} selectedId={docSelected} chrome={chrome} focusNonce={pdfFocus} onPick={pickDocument} onAttach={attach} />;
-  const content = !board ? null : split.enabled ? <SplitLayout ratio={split.ratio} onRatio={ratio => actions.setSplit({ ratio })} left={boardArea} right={rightPane} />
+  const content = !board ? null : split.enabled ? <SplitLayout ratio={split.ratio} onRatio={ratio => actions.setSplit({ ratio })} left={boardArea} right={rightPane}
+      leftLabel={t('workspace.boardPane')} rightLabel={t('workspace.documentPane')} dividerLabel={t('workspace.splitDivider')} dividerHint={t('workspace.splitHint')}
+      dividerValueText={percent => t('workspace.splitBoardShare', { percent })} />
     : activeTab === 'board' ? boardArea : activeTab === 'schematic' ? schematicTab : documentsTab('aside');
   const toasts: Array<{ id: number; kind: Notice['kind']; message: Message }> = [...state.notices, ...localToasts].slice(-3);
   // An error notice (a refused start-up, external or in-app open) is on screen until closed or timed out; the support dialog is a native
@@ -380,9 +387,19 @@ export default function Shell({ api }: { api: WorkspaceApi }) {
       <UpdateNotice enabled={settings.updateCheck} asked={settings.updateCheckAsked} ready={ready} after={supportSettled} t={t} onOpenFailed={onUpdateOpenFailed} onAnswer={onUpdateAnswer} />
       {board ? <>
         <div className="workspace" data-left={!focusLayout && panels.left ? 'open' : 'closed'} data-right={!focusLayout && panels.right ? 'open' : 'closed'} data-split={split.enabled} data-tab={activeTab}>
-          {!focusLayout && panels.left && <Probe id="left"><SearchPanel api={api} side={side} allSides={allSides} onAllSides={setAllSides} onRecents={() => setModal('recents')} inputRef={searchRef} onActivated={onSearchActivated} /></Probe>}
-          <div ref={mainRef} className="wsp-main" role="tabpanel" id="wsp-tabpanel" aria-labelledby={`wsp-tab-${activeTab}`} aria-label={t('workspace.mainPanel')} data-testid="main-panel">{content}</div>
-          {!focusLayout && panels.right && <Probe id="inspector"><Inspector api={api} floating={false} activeDocumentId={bookmarkDocument} onLocate={() => command('center-selection')} onEditNote={editNote} onShowSchematic={showSchematic} onShowNet={showNet} onLink={openLink} onOpenHit={openHit} onOpenPage={openPage} /></Probe>}
+          {!focusLayout && panels.left && <div className="wsp-left-col" style={{ width: panelWidths.left }}>
+            {(state.probeGuide || state.probeGuideResult) && <div className="wsp-probe-sidebar"><ProbeGuideHud probeGuide={state.probeGuide} probeGuideResult={state.probeGuideResult} onChoice={key => actions.advanceProbeGuide(key)} onBack={() => actions.stepBackProbeGuide()} onClose={() => actions.clearProbeGuide()} /></div>}
+            <Probe id="left"><SearchPanel api={api} side={side} allSides={allSides} onAllSides={setAllSides} onRecents={() => setModal('recents')} inputRef={searchRef} onActivated={onSearchActivated} /></Probe>
+          </div>}
+          {!focusLayout && panels.left && <PanelResizeHandle side="left" width={panelWidths.left} onResize={panelWidths.setLeft} label={t('workspace.resizeLeftPanel')} />}
+          <div ref={mainRef} className="wsp-main" role="tabpanel" id="wsp-tabpanel" aria-labelledby={`wsp-tab-${activeTab}`} aria-label={t('workspace.mainPanel')} data-testid="main-panel">
+            {content}
+            {(focusLayout || !panels.left) && (state.probeGuide || state.probeGuideResult) && <ProbeGuideHud probeGuide={state.probeGuide} probeGuideResult={state.probeGuideResult} onChoice={key => actions.advanceProbeGuide(key)} onBack={() => actions.stepBackProbeGuide()} onClose={() => actions.clearProbeGuide()} />}
+          </div>
+          {!focusLayout && panels.right && <PanelResizeHandle side="right" width={panelWidths.right} onResize={panelWidths.setRight} label={t('workspace.resizeRightPanel')} />}
+          {!focusLayout && panels.right && <div className="wsp-right-col" style={{ width: panelWidths.right }}>
+            <Probe id="inspector"><Inspector api={api} floating={false} activeDocumentId={bookmarkDocument} onLocate={() => command('center-selection')} onEditNote={editNote} onShowSchematic={showSchematic} onShowNet={showNet} onLink={openLink} onOpenHit={openHit} onOpenPage={openPage} /></Probe>
+          </div>}
         </div>
         <Probe id="status"><StatusBar store={statusStore} fmt={fmt} t={t} counts={counts} warnings={board.warnings.length} save={state.save} persistence={state.persistence} breadcrumb={breadcrumb} unresolvedNotes={unresolvedCount} onInfo={() => setModal('info')} onHelp={() => setModal('help')} onUnresolvedNotes={() => setModal('notes')} /></Probe>
       </> : <Welcome recents={state.import.recents} onOpen={open} onRecent={path => void actions.openRecent(path)} onHelp={() => setModal('help')} />}

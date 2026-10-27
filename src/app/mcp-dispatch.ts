@@ -1,11 +1,46 @@
 import type { WorkspaceActions, WorkspaceState } from './api';
 import type { ProbeGuide } from '../lib/probe-guide';
+import type { BoardIndex } from '../lib/board-index';
 
 /** One board query/selection request from the AI agent bridge (electron/mcp-bridge.cjs). */
 export type McpOutcome = { ok: true; result: unknown } | { ok: false; error: string };
 
 function fail(error: unknown): McpOutcome {
   return { ok: false, error: error instanceof Error ? error.message : String(error) };
+}
+
+/**
+ * Checks every step's probe markers against the loaded board, so a guide authored with a wrong/stale pinId
+ * (BoardPin.id is a session-local parser handle, not a predictable format — never guess it) fails loudly in the
+ * `loadProbeGuide` tool result instead of silently rendering no markers (resolveProbeMarkers in probe-guide.ts
+ * skips unresolved markers by design, which is right for rendering but leaves the MCP caller with no signal).
+ */
+function validateProbeGuideMarkers(guide: ProbeGuide, index: Pick<BoardIndex, 'pinById' | 'componentById'>): string[] {
+  const warnings: string[] = [];
+  for (const step of Object.values(guide.steps)) {
+    for (const marker of step.probes) {
+      const found = marker.pinId ? index.pinById.has(marker.pinId) : index.componentById.has(marker.componentId);
+      if (!found) warnings.push(`step "${step.id}": ${marker.pinId ? `pinId "${marker.pinId}"` : `componentId "${marker.componentId}"`} not found on the board — this marker will not render.`);
+    }
+  }
+  return warnings;
+}
+
+/** The probe guide status projection, shared by the `probeGuideStatus` RPC case and the push channel (useWorkspace.ts). */
+export function projectProbeGuideStatus(state: Pick<WorkspaceState, 'probeGuide' | 'probeGuideResult'>) {
+  const g = state.probeGuide;
+  if (!g) return { active: false as const, lastResult: state.probeGuideResult ?? null };
+  const step = g.guide.steps[g.currentStepId];
+  return {
+    active: true as const,
+    guideTitle: g.guide.title,
+    currentStepId: g.currentStepId,
+    instruction: step?.instruction ?? null,
+    mode: step?.mode ?? null,
+    expected: step?.expected ?? null,
+    choices: step?.choices.map(c => ({ key: c.key, label: c.label })) ?? [],
+    history: g.history,
+  };
 }
 
 /**
@@ -82,25 +117,11 @@ export function handleMcpRequest(method: string, params: Record<string, unknown>
         const guide = params?.guide as ProbeGuide | undefined;
         if (!guide) throw new Error('BAD_PARAMS: "guide" is required.');
         actions.loadProbeGuide(guide);
-        return { ok: true, result: null };
+        const warnings = state.boardIndex ? validateProbeGuideMarkers(guide, state.boardIndex) : [];
+        return { ok: true, result: { warnings } };
       }
       case 'probeGuideStatus': {
-        const g = state.probeGuide;
-        if (!g) return { ok: true, result: { active: false } };
-        const step = g.guide.steps[g.currentStepId];
-        return {
-          ok: true,
-          result: {
-            active: true,
-            guideTitle: g.guide.title,
-            currentStepId: g.currentStepId,
-            instruction: step?.instruction ?? null,
-            mode: step?.mode ?? null,
-            expected: step?.expected ?? null,
-            choices: step?.choices.map(c => ({ key: c.key, label: c.label })) ?? [],
-            history: g.history,
-          },
-        };
+        return { ok: true, result: projectProbeGuideStatus(state) };
       }
       case 'clearProbeGuide': {
         actions.clearProbeGuide();

@@ -6,6 +6,8 @@
   "workspace.splitView": "Vue scindée",
   "workspace.searchPanel": "Panneau de recherche",
   "workspace.inspectorPanel": "Panneau d’inspection",
+  "workspace.resizeLeftPanel": "Redimensionner le panneau des composants",
+  "workspace.resizeRightPanel": "Redimensionner le panneau d’inspection",
   "workspace.export.cancelled": "Export annulé. Rien n’a été écrit.",
   "workspace.export.failed": "L’export a échoué. Rien n’a été écrit.",
   "workspace.alias.removed": "Alias pour {name} supprimé.",

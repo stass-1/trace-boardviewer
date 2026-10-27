@@ -2,5 +2,19 @@
   "probe.continuity": "Continuité",
   "probe.range": "Plage {range}",
   "probe.close": "Fermer le guide de mesure",
-  "probe.expected": "Attendu"
+  "probe.back": "Étape précédente",
+  "probe.stepNumber": "Étape {step}",
+  "probe.expected": "Attendu",
+  "probe.powerOn": "Laisser l'alimentation branchée",
+  "probe.powerOff": "Débrancher l'alimentation d'abord",
+  "probe.redLead": "Rouge (+)",
+  "probe.blueLead": "Noir (−)",
+  "probe.referenceGnd": "Masse châssis (GND)",
+  "probe.verdict": "Bilan du diagnostic",
+  "probe.done": "Terminé",
+  "probe.splitDivider": "Redimensionner les volets de mesure",
+  "probe.splitHint": "Glisser, ou utiliser les flèches. Double-clic pour réinitialiser.",
+  "probe.splitPaneA": "Premier point de mesure",
+  "probe.splitPaneB": "Second point de mesure",
+  "probe.splitShare": "{percent} % premier point"
 }

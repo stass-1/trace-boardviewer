@@ -2,5 +2,19 @@
   "probe.continuity": "Folytonosság",
   "probe.range": "{range} tartomány",
   "probe.close": "Mérésvezető bezárása",
-  "probe.expected": "Várható"
+  "probe.back": "Előző lépés",
+  "probe.stepNumber": "{step}. lépés",
+  "probe.expected": "Várható",
+  "probe.powerOn": "A tápellátás maradjon bekötve",
+  "probe.powerOff": "Előbb húzd ki a tápellátást",
+  "probe.redLead": "Piros (+)",
+  "probe.blueLead": "Fekete (−)",
+  "probe.referenceGnd": "Testpont / GND",
+  "probe.verdict": "Következtetés",
+  "probe.done": "Kész",
+  "probe.splitDivider": "A mérőpanelek átméretezése",
+  "probe.splitHint": "Húzd, vagy használd a nyílbillentyűket. Dupla kattintás visszaállítja.",
+  "probe.splitPaneA": "Első mérési pont",
+  "probe.splitPaneB": "Második mérési pont",
+  "probe.splitShare": "{percent}% első pont"
 }

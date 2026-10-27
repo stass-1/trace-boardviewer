@@ -2,5 +2,19 @@
   "probe.continuity": "Continuity",
   "probe.range": "{range} range",
   "probe.close": "Close probe guide",
-  "probe.expected": "Expected"
+  "probe.back": "Previous step",
+  "probe.stepNumber": "Step {step}",
+  "probe.expected": "Expected",
+  "probe.powerOn": "Keep power connected",
+  "probe.powerOff": "Disconnect power first",
+  "probe.redLead": "Red (+)",
+  "probe.blueLead": "Black (−)",
+  "probe.referenceGnd": "Chassis GND",
+  "probe.verdict": "Conclusion",
+  "probe.done": "Done",
+  "probe.splitDivider": "Resize the measurement panes",
+  "probe.splitHint": "Drag, or use the arrow keys. Double-click to reset.",
+  "probe.splitPaneA": "First measurement point",
+  "probe.splitPaneB": "Second measurement point",
+  "probe.splitShare": "{percent}% first point"
 }

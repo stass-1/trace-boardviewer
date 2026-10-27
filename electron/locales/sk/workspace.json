@@ -6,6 +6,8 @@
   "workspace.splitView": "Rozdelené zobrazenie",
   "workspace.searchPanel": "Panel hľadania",
   "workspace.inspectorPanel": "Panel inšpektora",
+  "workspace.resizeLeftPanel": "Zmeniť veľkosť panela komponentov",
+  "workspace.resizeRightPanel": "Zmeniť veľkosť panela inšpektora",
   "workspace.export.cancelled": "Export zrušený. Nič sa nezapísalo.",
   "workspace.export.failed": "Export zlyhal. Nič sa nezapísalo.",
   "workspace.alias.removed": "Alias pre {name} bol odstránený.",

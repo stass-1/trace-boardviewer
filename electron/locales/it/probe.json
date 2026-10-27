@@ -2,5 +2,19 @@
   "probe.continuity": "Continuità",
   "probe.range": "Intervallo {range}",
   "probe.close": "Chiudi la guida di misura",
-  "probe.expected": "Previsto"
+  "probe.back": "Passo precedente",
+  "probe.stepNumber": "Passo {step}",
+  "probe.expected": "Previsto",
+  "probe.powerOn": "Tieni l'alimentazione collegata",
+  "probe.powerOff": "Scollega prima l'alimentazione",
+  "probe.redLead": "Rosso (+)",
+  "probe.blueLead": "Nero (−)",
+  "probe.referenceGnd": "GND telaio",
+  "probe.verdict": "Conclusione",
+  "probe.done": "Fatto",
+  "probe.splitDivider": "Ridimensiona i riquadri di misura",
+  "probe.splitHint": "Trascina oppure usa le frecce. Doppio clic per ripristinare.",
+  "probe.splitPaneA": "Primo punto di misura",
+  "probe.splitPaneB": "Secondo punto di misura",
+  "probe.splitShare": "{percent}% primo punto"
 }

@@ -13,48 +13,110 @@ import type { Frame2D, Layer2D } from './board-render-2d';
 const MARKER_COLORS: Record<ProbeColor, string> = { red: '#ff3b30', blue: '#2f7bff' };
 
 /** Screen-space marker radius (CSS px) before it is converted to board mm for the current zoom, following `drawSelectionMarkers`'s convention. */
-const MARKER_SCREEN_RADIUS_PX = 6;
+const MARKER_SCREEN_RADIUS_PX = 5.5;
 
 type ResolvedMarker = { color: ProbeColor; point: Point2; label?: string };
 /** Minimal projection of `board-index.ts`'s `BoardIndex` that `resolveProbeMarkers` needs (Package A's contract). */
 export interface ProbeGuideLookup { pin(id: string): Point2 | undefined; component(id: string): { bounds: Bounds2 } | undefined }
+
+function drawPairLink(f: Frame2D, markers: readonly ResolvedMarker[]): void {
+  if (markers.length !== 2) return;
+  const { ctx } = f;
+  f.toScreenSpace();
+  const a = f.boardToScreen(markers[0].point);
+  const b = f.boardToScreen(markers[1].point);
+  const dist = Math.hypot(b.x - a.x, b.y - a.y);
+  if (dist < 18) return;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y);
+  ctx.lineTo(b.x, b.y);
+  ctx.strokeStyle = f.palette.amber;
+  ctx.globalAlpha = 0.55;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([5, 5]);
+  ctx.stroke();
+  ctx.restore();
+}
 
 function drawMarker(f: Frame2D, marker: ResolvedMarker): void {
   const { ctx, view } = f;
   const dark = f.state.theme === 'dark';
   f.toBoardSpace();
   const radius = MARKER_SCREEN_RADIUS_PX / view.scale;
+  const ringRadius = (MARKER_SCREEN_RADIUS_PX * 2.25) / view.scale;
+  const tickInner = (MARKER_SCREEN_RADIUS_PX * 1.8) / view.scale;
+  const tickOuter = (MARKER_SCREEN_RADIUS_PX * 2.85) / view.scale;
   const color = MARKER_COLORS[marker.color];
-  // Outer glow (a static stand-in for a pulse: cheap, legible, no per-frame animation plumbing needed outside board-render-2d.ts).
+  const { x, y } = marker.point;
+
+  // Soft outer halo + precision target reticle ring so the pad underneath remains legible while the target catches the eye immediately.
   ctx.save();
-  ctx.globalAlpha = 0.35;
-  ctx.beginPath(); ctx.arc(marker.point.x, marker.point.y, radius * 1.9, 0, Math.PI * 2);
+  ctx.globalAlpha = 0.24;
+  ctx.beginPath(); ctx.arc(x, y, radius * 2.0, 0, Math.PI * 2);
   ctx.fillStyle = color; ctx.fill();
+
+  ctx.globalAlpha = 0.85;
+  ctx.beginPath(); ctx.arc(x, y, ringRadius, 0, Math.PI * 2);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5 / view.scale;
+  ctx.stroke();
+
+  // Four crosshair ticks (N, S, E, W) around the target ring.
+  ctx.beginPath();
+  ctx.moveTo(x - tickOuter, y); ctx.lineTo(x - tickInner, y);
+  ctx.moveTo(x + tickInner, y); ctx.lineTo(x + tickOuter, y);
+  ctx.moveTo(x, y - tickOuter); ctx.lineTo(x, y - tickInner);
+  ctx.moveTo(x, y + tickInner); ctx.lineTo(x, y + tickOuter);
+  ctx.lineWidth = 1.6 / view.scale;
+  ctx.stroke();
   ctx.restore();
-  // The filled dot with a theme-appropriate outline, so it reads over both light and dark board fills.
-  ctx.beginPath(); ctx.arc(marker.point.x, marker.point.y, radius, 0, Math.PI * 2);
+
+  // The filled center dot with a theme-appropriate outline, so it reads over both light and dark board fills.
+  ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2);
   ctx.fillStyle = color; ctx.fill();
   ctx.lineWidth = 2 / view.scale;
   ctx.strokeStyle = dark ? '#0b1118' : '#ffffff';
   ctx.stroke();
 }
 
-function drawMarkerLabel(f: Frame2D, marker: ResolvedMarker): void {
+function drawMarkerLabel(f: Frame2D, marker: ResolvedMarker, verticalOffsetPx: number): void {
   if (!marker.label) return;
   const { ctx, palette } = f;
   f.toScreenSpace();
   const screen = f.boardToScreen(marker.point);
   const text = marker.label;
+  const color = MARKER_COLORS[marker.color];
+  const sign = marker.color === 'red' ? '+' : '−';
+
+  ctx.save();
   ctx.font = "600 11px 'IBM Plex Mono', Consolas, monospace";
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   const textWidth = ctx.measureText(text).width;
-  const x = screen.x + 11, y = screen.y - 12;
+  const badgeW = textWidth + 30;
+  const badgeH = 24;
+  const boxX = screen.x + 14;
+  const boxY = screen.y + verticalOffsetPx - badgeH / 2;
+
   ctx.fillStyle = palette.card;
-  ctx.strokeStyle = MARKER_COLORS[marker.color];
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.roundRect(x - 5, y - 11, textWidth + 10, 22, 6); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.roundRect(boxX, boxY, badgeW, badgeH, 7); ctx.fill(); ctx.stroke();
+
+  // Polarity dot (+ / −) inside the left side of the pill for instant color-blind-safe identification.
+  const dotX = boxX + 11, dotY = boxY + badgeH / 2;
+  ctx.beginPath(); ctx.arc(dotX, dotY, 6.5, 0, Math.PI * 2);
+  ctx.fillStyle = color; ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.font = "700 11px 'IBM Plex Mono', Consolas, monospace";
+  ctx.textAlign = 'center';
+  ctx.fillText(sign, dotX, dotY + 0.5);
+
   ctx.fillStyle = palette.text;
-  ctx.fillText(text, x, y);
+  ctx.font = "600 11px 'IBM Plex Mono', Consolas, monospace";
+  ctx.textAlign = 'left';
+  ctx.fillText(text, boxX + 22, dotY);
+  ctx.restore();
 }
 
 function markerLayer(markers: readonly ResolvedMarker[]): Layer2D {
@@ -63,14 +125,29 @@ function markerLayer(markers: readonly ResolvedMarker[]): Layer2D {
     surface: 'overlay',
     order: 400,
     draw(f: Frame2D) {
+      drawPairLink(f, markers);
       for (const marker of markers) drawMarker(f, marker);
-      for (const marker of markers) drawMarkerLabel(f, marker);
+      // Avoid label overlap when two markers sit close together in screen space.
+      let spreadClosePair = false;
+      if (markers.length === 2) {
+        const s0 = f.boardToScreen(markers[0].point);
+        const s1 = f.boardToScreen(markers[1].point);
+        spreadClosePair = Math.abs(s0.y - s1.y) < 30 && Math.abs(s0.x - s1.x) < 160;
+      }
+      markers.forEach((marker, idx) => {
+        const offsetY = spreadClosePair ? (idx === 0 ? -16 : 16) : -14;
+        drawMarkerLabel(f, marker, offsetY);
+      });
     },
   };
 }
 
-/** Inset size and margin (CSS px) of the minimap, bottom-right corner, above the compass (LAYER_ORDER.compass = 900). */
-const MINIMAP_WIDTH = 140, MINIMAP_HEIGHT = 100, MINIMAP_MARGIN = 14, MINIMAP_PAD = 9;
+/**
+ * Inset size and margin (CSS px) of the minimap, bottom-right corner, above the compass (LAYER_ORDER.compass = 900).
+ * `MINIMAP_BOTTOM_MARGIN` clears the `.canvas-bottom` toolbar (BoardPane.tsx: `bottom:20px` + ~40px of zoom/tool buttons, see
+ * workspace.css `.tool-group`), which otherwise sits under the minimap's lower half.
+ */
+const MINIMAP_WIDTH = 140, MINIMAP_HEIGHT = 100, MINIMAP_SIDE_MARGIN = 14, MINIMAP_BOTTOM_MARGIN = 94, MINIMAP_PAD = 9;
 
 function minimapLayer(markers: readonly ResolvedMarker[]): Layer2D {
   return {
@@ -79,12 +156,13 @@ function minimapLayer(markers: readonly ResolvedMarker[]): Layer2D {
     order: 950,
     draw(f: Frame2D) {
       const { ctx, palette, width, height } = f;
+      const dark = f.state.theme === 'dark';
       f.toScreenSpace();
-      const x0 = width - MINIMAP_WIDTH - MINIMAP_MARGIN, y0 = height - MINIMAP_HEIGHT - MINIMAP_MARGIN;
+      const x0 = width - MINIMAP_WIDTH - MINIMAP_SIDE_MARGIN, y0 = height - MINIMAP_HEIGHT - MINIMAP_BOTTOM_MARGIN;
       ctx.save();
       // Panel background/border, legible on both themes (the app's own card/board-line colours, not hardcoded); a plain canvas
       // alpha composite (not a CSS color-mix() string) keeps this portable across Canvas2D implementations.
-      ctx.globalAlpha = 0.9;
+      ctx.globalAlpha = 0.92;
       ctx.fillStyle = palette.card;
       ctx.strokeStyle = palette.boardLine;
       ctx.lineWidth = 1;
@@ -113,11 +191,27 @@ function minimapLayer(markers: readonly ResolvedMarker[]): Layer2D {
       ctx.lineWidth = 1.3;
       ctx.strokeRect(Math.min(corner1.x, corner2.x), Math.min(corner1.y, corner2.y), Math.abs(corner2.x - corner1.x), Math.abs(corner2.y - corner1.y));
 
+      if (markers.length === 2) {
+        const p0 = toInset(markers[0].point);
+        const p1 = toInset(markers[1].point);
+        ctx.save();
+        ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y);
+        ctx.strokeStyle = palette.amber;
+        ctx.globalAlpha = 0.65;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([2, 2]);
+        ctx.stroke();
+        ctx.restore();
+      }
+
       for (const marker of markers) {
         const p = toInset(marker.point);
-        ctx.beginPath(); ctx.arc(p.x, p.y, 2.6, 0, Math.PI * 2);
+        ctx.beginPath(); ctx.arc(p.x, p.y, 3.4, 0, Math.PI * 2);
         ctx.fillStyle = MARKER_COLORS[marker.color];
         ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = dark ? '#0b1118' : '#ffffff';
+        ctx.stroke();
       }
       ctx.restore();
     },

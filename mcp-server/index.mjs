@@ -141,7 +141,13 @@ server.tool(
   'board_probe_guide_load',
   'Load a probe guide (a branching sequence of multimeter-measurement steps) into the running TRACE Boardviewer app, so it starts walking the person through the first step.',
   { guide: ProbeGuideSchema },
-  async ({ guide }) => { await rpc('loadProbeGuide', { guide }); return textResult(`Loaded probe guide "${guide.title}" (${Object.keys(guide.steps).length} steps).`); },
+  async ({ guide }) => {
+    const result = await rpc('loadProbeGuide', { guide });
+    const warnings = result?.warnings ?? [];
+    const base = `Loaded probe guide "${guide.title}" (${Object.keys(guide.steps).length} steps).`;
+    if (warnings.length === 0) return textResult(base);
+    return textResult(`${base}\n\nWARNING — ${warnings.length} probe marker(s) will not render (bad pinId/componentId — re-check with board_get_component before retrying):\n${warnings.map(w => `- ${w}`).join('\n')}`);
+  },
 );
 
 server.tool(
@@ -149,6 +155,25 @@ server.tool(
   'Check whether a probe guide is active in the running TRACE Boardviewer app, and if so, get the current step\'s instruction, meter mode, expected reading, and available choices.',
   {},
   async () => textResult(await rpc('probeGuideStatus')),
+);
+
+server.tool(
+  'board_probe_guide_watch_url',
+  'Get a local WebSocket URL that pushes the running TRACE Boardviewer app\'s probe guide status the moment it changes (a choice is ' +
+  'pressed, or the guide ends) — connect to it once (e.g. with a ws-capable monitor/subscription tool) instead of polling ' +
+  'board_probe_guide_status in a loop. The first message after connecting is the guide\'s current status, even if nothing has changed ' +
+  'yet; after that, one message per change. The socket closes if the app closes or the bridge restarts — reconnect by calling this ' +
+  'tool again for a fresh token, then open a new connection.',
+  {},
+  async () => {
+    const control = readControl();
+    if (!control) {
+      throw new Error(
+        'TRACE Boardviewer is not running with the agent bridge enabled. Start it with TRACE_MCP_BRIDGE=1 set, with a board open.',
+      );
+    }
+    return textResult({ url: `ws://127.0.0.1:${control.port}/probe-guide-events?token=${control.token}` });
+  },
 );
 
 server.tool(

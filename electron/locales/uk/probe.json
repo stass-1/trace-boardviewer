@@ -2,5 +2,19 @@
   "probe.continuity": "Безперервність",
   "probe.range": "Діапазон {range}",
   "probe.close": "Закрити посібник з вимірювання",
-  "probe.expected": "Очікується"
+  "probe.back": "Попередній крок",
+  "probe.stepNumber": "Крок {step}",
+  "probe.expected": "Очікується",
+  "probe.powerOn": "Живлення має бути підключене",
+  "probe.powerOff": "Спершу відʼєднайте живлення",
+  "probe.redLead": "Червоний (+)",
+  "probe.blueLead": "Чорний (−)",
+  "probe.referenceGnd": "Маса шасі (GND)",
+  "probe.verdict": "Висновок",
+  "probe.done": "Готово",
+  "probe.splitDivider": "Змінити розмір панелей вимірювання",
+  "probe.splitHint": "Перетягніть або скористайтеся стрілками. Подвійне клацання скидає розмір.",
+  "probe.splitPaneA": "Перша точка вимірювання",
+  "probe.splitPaneB": "Друга точка вимірювання",
+  "probe.splitShare": "{percent}% першої точки"
 }

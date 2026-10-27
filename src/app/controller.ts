@@ -16,7 +16,7 @@ import type { Message, MessageKey, MessageParam, ParseIssue } from '../lib/i18n'
 import { assertStorable, migrateNotes, noteKeyIndex, unresolvedNotes } from '../lib/note-keys';
 import type { NoteSubject } from '../lib/note-keys';
 import type { CreatePdfSessionOptions, PdfSession, PdfSessionSnapshot } from '../lib/pdf/session-contract';
-import { advanceProbeGuide, startProbeGuide } from '../lib/probe-guide';
+import { advanceProbeGuide, startProbeGuide, stepBackProbeGuide } from '../lib/probe-guide';
 import type { ProbeGuide } from '../lib/probe-guide';
 import { pinKey, symbolKey } from '../lib/schematic/model';
 import type { SchSheetInstance, SchematicDesign } from '../lib/schematic/model';
@@ -325,7 +325,7 @@ class Controller {
     this.watchdog = { ...DEFAULT_PARSE_WATCHDOG, ...deps.parseWatchdog };
     this.state = {
       board: null, boardIndex: null, boardKey: null, boardPath: '', manifest: null, activeTab: 'board', split: DEFAULT_SPLIT, documents: NO_DOCUMENTS, notes: NO_NOTES, notesBlocked: null,
-      save: IDLE_SAVE, selection: EMPTY_SELECTION, probe: EMPTY_PROBE, probeGuide: null, search: EMPTY_SEARCH, link: null, pdfLinks: NO_LINKS, overlays: NO_OVERLAYS, notices: NO_NOTICES,
+      save: IDLE_SAVE, selection: EMPTY_SELECTION, probe: EMPTY_PROBE, probeGuide: null, probeGuideResult: null, search: EMPTY_SEARCH, link: null, pdfLinks: NO_LINKS, overlays: NO_OVERLAYS, notices: NO_NOTICES,
       persistence: this.desktop ? 'native' : 'session-only', import: { phase: 'idle', keyRequest: null, recents: NO_RECENTS, file: null, progress: null, reportContext: null },
     };
     this.actions = this.createActions();
@@ -1194,15 +1194,38 @@ class Controller {
   /** Starts a new Probe Guide run. Lets `startProbeGuide`'s error (invalid `startStepId`) propagate to the caller. */
   private loadProbeGuide(guide: ProbeGuide): void {
     const next = startProbeGuide(guide);
+    this.patch({ probeGuide: next, probeGuideResult: null });
+  }
+  /**
+   * A choice whose `next` is null ends the guide: the agent already relayed the verdict in chat, so the HUD/markers
+   * close immediately rather than sitting on a dead-end step that just logs further keypresses. The choice/verdict
+   * goes into `probeGuideResult` in the SAME patch, so a watcher of the push channel (which only sees `probeGuide`'s
+   * final value, not the intermediate "last step, choice just recorded" state `patch`/`batch` collapse away) still
+   * learns which choice closed it instead of just seeing `active: false` with no context.
+   */
+  private advanceProbeGuide(choiceKey: string): void {
+    const current = this.state.probeGuide;
+    if (!current) return;
+    const step = current.guide.steps[current.currentStepId];
+    const choice = step?.choices.find(candidate => candidate.key === choiceKey);
+    if (choice && choice.next === null) {
+      this.patch({
+        probeGuide: null,
+        probeGuideResult: { guideTitle: current.guide.title, stepId: current.currentStepId, choiceKey: choice.key, choiceLabel: choice.label, verdict: choice.verdict },
+      });
+      return;
+    }
+    const next = advanceProbeGuide(current, choiceKey);
     this.patch({ probeGuide: next });
   }
-  private advanceProbeGuide(choiceKey: string): void {
-    if (!this.state.probeGuide) return;
-    const next = advanceProbeGuide(this.state.probeGuide, choiceKey);
-    this.patch({ probeGuide: next });
+  private stepBackProbeGuide(): void {
+    const current = this.state.probeGuide;
+    if (!current) return;
+    const next = stepBackProbeGuide(current);
+    if (next !== current) this.patch({ probeGuide: next });
   }
   private clearProbeGuide(): void {
-    this.patch({ probeGuide: null });
+    this.patch({ probeGuide: null, probeGuideResult: null });
   }
 
   private pickSchematic(target: { documentId: string; instancePath: string; symbolId: string; pinId?: string }, origin: SelectionOrigin): void {
@@ -1959,6 +1982,7 @@ class Controller {
 
       loadProbeGuide: guide => this.batch(() => this.loadProbeGuide(guide)),
       advanceProbeGuide: choiceKey => this.batch(() => this.advanceProbeGuide(choiceKey)),
+      stepBackProbeGuide: () => this.batch(() => this.stepBackProbeGuide()),
       clearProbeGuide: () => this.batch(() => this.clearProbeGuide()),
 
       upsertNote: (target, patch) => this.upsertNote(target, patch),

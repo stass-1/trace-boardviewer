@@ -6,6 +6,8 @@
   "workspace.splitView": "Розділений вигляд",
   "workspace.searchPanel": "Панель пошуку",
   "workspace.inspectorPanel": "Панель інспектора",
+  "workspace.resizeLeftPanel": "Змінити розмір панелі компонентів",
+  "workspace.resizeRightPanel": "Змінити розмір панелі інспектора",
   "workspace.export.cancelled": "Експорт скасовано. Нічого не записано.",
   "workspace.export.failed": "Експорт не вдався. Нічого не записано.",
   "workspace.alias.removed": "Псевдонім для {name} видалено.",

@@ -4,7 +4,7 @@ import { createPdfSession } from '../lib/pdf/session';
 import type { WorkspaceApi } from './api';
 import { createWorkspaceController } from './controller';
 import type { ControllerDeps, KeyValueStorage, WorkerFactory, WorkspaceController } from './controller';
-import { handleMcpRequest } from './mcp-dispatch';
+import { handleMcpRequest, projectProbeGuideStatus } from './mcp-dispatch';
 
 /** Wires a started worker to the controller's callbacks (the controller never touches `Worker` itself). */
 const attach = (worker: Worker, onMessage: (data: unknown) => void, onError: () => void) => {
@@ -104,5 +104,11 @@ export function useWorkspace(): WorkspaceApi {
       sendMcpResponse(id, outcome);
     });
   }, [controller]);
+  // Pushes a probe guide change to the bridge's WebSocket channel (board_probe_guide_watch_url) the moment it
+  // happens, instead of making a watching agent poll probeGuideStatus. `state.probeGuide` is a fresh object on
+  // every change (controller.ts's patch()), so this effect re-fires exactly when the guide actually moves.
+  useEffect(() => {
+    window.traceDesktop?.notifyProbeGuideChanged?.(projectProbeGuideStatus(state));
+  }, [state.probeGuide]);
   return useMemo(() => ({ state, actions: controller.actions, sheetsOf: controller.sheetsOf, statusStore: controller.statusStore }), [state, controller]);
 }

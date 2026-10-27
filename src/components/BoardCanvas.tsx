@@ -59,8 +59,6 @@ export interface BoardCanvasProps {
   onSelectComponent(id: string | null): void;
   onSelectPin(id: string): void;
   onStatusChange?(status: CanvasStatus): void;
-  /** When set, the canvas renders two independent panes side-by-side instead of one, each fit/centered on its own bounds. `null`/absent = normal single-pane view. */
-  splitView?: { left: Bounds2; right: Bounds2 } | null;
 }
 
 /** The view is reported once it stopped changing for this long: a pan/zoom gesture never reaches the shell at pointer rate. */
@@ -68,8 +66,6 @@ const CAMERA_IDLE_MS = 350;
 /** Backstop for a missed contextrestored event: the (draw-free) lost-context check runs this often. Idle stays at 0 draws. */
 const CONTEXT_CHECK_MS = 1000;
 const NO_LAYERS: readonly Layer2D[] = [];
-/** Gap in CSS pixels between the two panes of a split view. */
-const SPLIT_GAP = 4;
 
 interface HoverTarget { component: BoardComponent; pin?: BoardPin; screen: Point2 }
 interface DragState { id: number; start: Point2; last: Point2; moved: boolean }
@@ -113,37 +109,10 @@ function BoardCanvas(props: BoardCanvasProps) {
 
   const scene = useMemo(() => buildBoardScene(props.board, props.index ?? boardIndexOf(props.board)), [props.board, props.index]);
 
-  /**
-   * The two panes' cameras when `props.splitView` is set, cached so a draw doesn't re-fit on every frame; recomputed by the effect
-   * below (bounds change) and by the resize handler (canvas size change). Unlike `viewRef`, nothing writes into this from user
-   * gestures (wheel/drag) in this pass: the split panes are fit-and-fixed, not live pannable/zoomable yet. Follow-up if needed.
-   */
-  const splitViewRef = useRef<{ left: ViewTransform; right: ViewTransform } | null>(null);
-  const fitSplitViews = useCallback((split: { left: Bounds2; right: Bounds2 }) => {
-    const { width, height } = dimensionsRef.current;
-    const paneWidth = Math.max(1, (width - SPLIT_GAP) / 2);
-    const mirrored = propsRef.current.side === 'bottom';
-    return { left: fitView(split.left, paneWidth, height, 0, mirrored), right: fitView(split.right, paneWidth, height, 0, mirrored) };
-  }, []);
-
-  /**
-   * The panes of the canvas, in draw order. Normally one pane covers the whole canvas and shows the camera's view of the viewed
-   * side. When `props.splitView` is set, two panes split the canvas left/right instead, each fit to its own bounds; drawing and
-   * input already go through the pane list generically, so nothing else needs to know which case this is.
-   */
+  /** The single pane of the canvas, in draw order (BoardPane.tsx renders two independent `BoardCanvas` instances via `SplitLayout` for a probe-guide split view, rather than asking this component to draw more than one pane itself). */
   const panes = (): readonly BoardPane[] => {
     const { width, height } = dimensionsRef.current;
-    const side = propsRef.current.side;
-    const split = propsRef.current.splitView;
-    if (split) {
-      const views = splitViewRef.current ?? fitSplitViews(split);
-      const paneWidth = Math.max(1, (width - SPLIT_GAP) / 2);
-      return [
-        { id: 'split-left', rect: { x: 0, y: 0, width: paneWidth, height }, view: views.left, side },
-        { id: 'split-right', rect: { x: paneWidth + SPLIT_GAP, y: 0, width: paneWidth, height }, view: views.right, side },
-      ];
-    }
-    return [fullPane(viewRef.current, side, width, height)];
+    return [fullPane(viewRef.current, propsRef.current.side, width, height)];
   };
   /** The pane that takes input at a canvas point: the one under it, else (a captured drag or a wheel at the edge) the first pane. */
   const inputPane = (point: Point2): BoardPane => {
@@ -299,7 +268,6 @@ function BoardCanvas(props: BoardCanvasProps) {
       const fit = fitView(propsRef.current.board.bounds, width, height, viewRef.current.rotation, propsRef.current.side === 'bottom');
       fitScaleRef.current = fit.scale;
       if (!initialized) { viewRef.current = fit; initialized = true; }
-      if (propsRef.current.splitView) splitViewRef.current = fitSplitViews(propsRef.current.splitView);
       requestDraw(); reportStatus(true);
     };
     const onResolutionChange = () => {
@@ -328,16 +296,7 @@ function BoardCanvas(props: BoardCanvasProps) {
       resolutionQuery?.removeEventListener('change', onResolutionChange);
       window.clearInterval(resolutionTimer);
     };
-  }, [clearHover, requestDraw, reportStatus, fitSplitViews]);
-
-  // Re-fits the two split-view cameras when the caller gives new bounds (or clears/sets the prop); a plain object reference
-  // comparison is enough since callers construct `splitView` fresh whenever its bounds actually change.
-  const splitLeft = props.splitView?.left;
-  const splitRight = props.splitView?.right;
-  useEffect(() => {
-    splitViewRef.current = splitLeft && splitRight ? fitSplitViews({ left: splitLeft, right: splitRight }) : null;
-    requestDraw();
-  }, [splitLeft, splitRight, fitSplitViews, requestDraw]);
+  }, [clearHover, requestDraw, reportStatus]);
 
   useEffect(() => {
     const { width, height } = dimensionsRef.current;

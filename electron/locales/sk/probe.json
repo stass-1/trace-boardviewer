@@ -2,5 +2,19 @@
   "probe.continuity": "Vodivosť",
   "probe.range": "Rozsah {range}",
   "probe.close": "Zavrieť sprievodcu meraním",
-  "probe.expected": "Očakávané"
+  "probe.back": "Predchádzajúci krok",
+  "probe.stepNumber": "Krok {step}",
+  "probe.expected": "Očakávané",
+  "probe.powerOn": "Napájanie musí byť pripojené",
+  "probe.powerOff": "Najprv odpojte napájanie",
+  "probe.redLead": "Červený (+)",
+  "probe.blueLead": "Čierny (−)",
+  "probe.referenceGnd": "Kostra / GND",
+  "probe.verdict": "Záver",
+  "probe.done": "Hotovo",
+  "probe.splitDivider": "Zmeniť veľkosť meracích panelov",
+  "probe.splitHint": "Potiahni alebo použi šípky. Dvojklikom sa obnoví predvolená veľkosť.",
+  "probe.splitPaneA": "Prvý merací bod",
+  "probe.splitPaneB": "Druhý merací bod",
+  "probe.splitShare": "{percent} % prvého bodu"
 }

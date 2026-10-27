@@ -2,5 +2,19 @@
   "probe.continuity": "Durchgang",
   "probe.range": "{range}-Bereich",
   "probe.close": "Messassistent schließen",
-  "probe.expected": "Erwartet"
+  "probe.back": "Vorheriger Schritt",
+  "probe.stepNumber": "Schritt {step}",
+  "probe.expected": "Erwartet",
+  "probe.powerOn": "Stromversorgung angeschlossen lassen",
+  "probe.powerOff": "Zuerst Stromversorgung trennen",
+  "probe.redLead": "Rot (+)",
+  "probe.blueLead": "Schwarz (−)",
+  "probe.referenceGnd": "Gehäuse-GND",
+  "probe.verdict": "Ergebnis",
+  "probe.done": "Fertig",
+  "probe.splitDivider": "Messbereiche in der Größe ändern",
+  "probe.splitHint": "Ziehen oder Pfeiltasten verwenden. Doppelklick setzt zurück.",
+  "probe.splitPaneA": "Erster Messpunkt",
+  "probe.splitPaneB": "Zweiter Messpunkt",
+  "probe.splitShare": "{percent}% erster Punkt"
 }

@@ -153,4 +153,6 @@ contextBridge.exposeInMainWorld('traceDesktop', Object.freeze({
   // renderer to run a board query/selection action and report back; see src/app/mcp-dispatch.ts.
   onMcpRequest: (listener) => subscribe('trace:mcp-request', listener),
   sendMcpResponse: (id, payload) => ipcRenderer.send('trace:mcp-response', { id, ...payload }),
+  // One-way: tells the bridge's WebSocket push channel the probe guide moved, so a connected agent sees it without polling.
+  notifyProbeGuideChanged: (status) => ipcRenderer.send('trace:probe-guide-changed', status),
 }));

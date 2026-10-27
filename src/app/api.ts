@@ -8,7 +8,7 @@ import type { Message } from '../lib/i18n';
 import type { Board, BoardNote, RecentFile } from '../lib/types';
 import type { NoteSubject } from '../lib/note-keys';
 import type { NotePatch } from '../lib/workspace';
-import type { ProbeGuide, ProbeGuideState } from '../lib/probe-guide';
+import type { ProbeGuide, ProbeGuideResult, ProbeGuideState } from '../lib/probe-guide';
 import type BugReportContract = require('../../shared/bug-report-contract.cjs');
 
 /**
@@ -131,6 +131,8 @@ export interface WorkspaceState {
   probe: ProbeState;
   /** The active Probe Guide run (pushed over the AI/MCP control channel), or null when none is loaded. */
   probeGuide: ProbeGuideState | null;
+  /** The choice/verdict that just closed a guide (set the same moment `probeGuide` goes back to null), so the status/push projection can report it; cleared when a new guide loads or `clearProbeGuide` fires. */
+  probeGuideResult: ProbeGuideResult | null;
   search: SearchState;
   /** Board ↔ schematic comparison for every ready schematic (null without one). */
   link: LinkReport | null;
@@ -214,6 +216,8 @@ export interface WorkspaceActions {
   loadProbeGuide(guide: ProbeGuide): void;
   /** Applies a keypress to the running guide; a no-op without a loaded guide or an invalid key for the current step. */
   advanceProbeGuide(choiceKey: string): void;
+  /** Steps back to the previous measurement step in the running guide, if any history exists. */
+  stepBackProbeGuide(): void;
   /** Ends the running guide, if any. */
   clearProbeGuide(): void;
 

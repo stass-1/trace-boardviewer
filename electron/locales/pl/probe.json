@@ -2,5 +2,19 @@
   "probe.continuity": "Ciągłość",
   "probe.range": "Zakres {range}",
   "probe.close": "Zamknij przewodnik pomiarowy",
-  "probe.expected": "Oczekiwane"
+  "probe.back": "Poprzedni krok",
+  "probe.stepNumber": "Krok {step}",
+  "probe.expected": "Oczekiwane",
+  "probe.powerOn": "Zasilanie musi być podłączone",
+  "probe.powerOff": "Najpierw odłącz zasilanie",
+  "probe.redLead": "Czerwony (+)",
+  "probe.blueLead": "Czarny (−)",
+  "probe.referenceGnd": "Masa obudowy (GND)",
+  "probe.verdict": "Wniosek",
+  "probe.done": "Gotowe",
+  "probe.splitDivider": "Zmień rozmiar paneli pomiarowych",
+  "probe.splitHint": "Przeciągnij lub użyj strzałek. Podwójne kliknięcie resetuje.",
+  "probe.splitPaneA": "Pierwszy punkt pomiaru",
+  "probe.splitPaneB": "Drugi punkt pomiaru",
+  "probe.splitShare": "{percent}% pierwszego punktu"
 }

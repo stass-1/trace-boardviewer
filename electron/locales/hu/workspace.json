@@ -6,6 +6,8 @@
   "workspace.splitView": "Osztott nézet",
   "workspace.searchPanel": "Keresőpanel",
   "workspace.inspectorPanel": "Vizsgálópanel",
+  "workspace.resizeLeftPanel": "A komponenspanel átméretezése",
+  "workspace.resizeRightPanel": "A vizsgálópanel átméretezése",
   "workspace.export.cancelled": "Az exportálás megszakítva. Nem íródott fájl.",
   "workspace.export.failed": "Az exportálás nem sikerült. Nem íródott fájl.",
   "workspace.alias.removed": "A(z) {name} alias eltávolítva.",

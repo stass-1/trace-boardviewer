@@ -1822,6 +1822,7 @@ if (!singleInstance) {
     if (process.env.TRACE_MCP_BRIDGE === '1') {
       const mcpBridge = startMcpBridge({ getTargetWindow: () => mainWindow, controlFilePath: defaultControlFilePath, log: console.log });
       ipcMain.on('trace:mcp-response', (event, payload) => { if (trustedSender(event)) mcpBridge.handleResponse(payload); });
+      ipcMain.on('trace:probe-guide-changed', (event, payload) => { if (trustedSender(event)) mcpBridge.notifyProbeGuideChanged(payload); });
       app.on('quit', () => mcpBridge.stop());
     }
     void noticePendingOpens(launched);

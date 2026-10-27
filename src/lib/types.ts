@@ -313,6 +313,8 @@ export interface TraceDesktop {
   onMcpRequest?(listener: (request: { id: number; method: string; params?: Record<string, unknown> }) => void): () => void;
   /** Answers one onMcpRequest call by its id, with the outcome from src/app/mcp-dispatch.ts. */
   sendMcpResponse?(id: number, payload: { ok: true; result: unknown } | { ok: false; error: string }): void;
+  /** Fire-and-forget: tells the bridge's WebSocket push channel the probe guide changed, so a watching agent is notified without polling. */
+  notifyProbeGuideChanged?(status: unknown): void;
 }
 /** A measured value, or 'unknown' when the scan did not measure it. Never false by default. */
 export type LibraryMeasure = number | 'unknown';

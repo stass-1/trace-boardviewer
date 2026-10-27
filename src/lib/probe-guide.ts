@@ -39,6 +39,15 @@ export interface ProbeGuideState {
   history: Array<{ stepId: string; choiceKey: string }>;
 }
 
+/** The terminal choice that just ended a guide (probeGuide goes to null the same moment this is set), so a watcher of the push channel still learns which choice/verdict closed it. */
+export interface ProbeGuideResult {
+  guideTitle: string;
+  stepId: string;
+  choiceKey: string;
+  choiceLabel: string;
+  verdict?: string;
+}
+
 /** Builds the initial ProbeGuideState from a guide. Throws a clear Error if guide.steps[guide.startStepId] is missing (so an MCP caller gets a readable error). */
 export function startProbeGuide(guide: ProbeGuide): ProbeGuideState {
   if (!guide.steps[guide.startStepId]) throw new Error(`Probe guide "${guide.id}" has no step "${guide.startStepId}" (startStepId).`);
@@ -58,6 +67,14 @@ export function advanceProbeGuide(state: ProbeGuideState, choiceKey: string): Pr
   if (!choice) return state;
   const history = [...state.history, { stepId: step.id, choiceKey: choice.key }];
   return { guide: state.guide, currentStepId: choice.next ?? state.currentStepId, history };
+}
+
+/** Pure: steps back to the previous step in `state.history`, or returns the SAME state object when `history` is empty. */
+export function stepBackProbeGuide(state: ProbeGuideState): ProbeGuideState {
+  if (state.history.length === 0) return state;
+  const previous = state.history[state.history.length - 1];
+  if (!previous || !state.guide.steps[previous.stepId]) return state;
+  return { guide: state.guide, currentStepId: previous.stepId, history: state.history.slice(0, -1) };
 }
 
 /**
